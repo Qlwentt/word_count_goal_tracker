@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>
+    function onSuccessWordCount(word_count) {
+      var div = document.getElementById('word-count-display');
+      div.innerHTML = word_count;
+    }
+
+    function onSuccessSessionWordCount(word_count) {
+      var div = document.getElementById('session-word-count-display');
+      div.innerHTML = word_count;
+    }
+
+    function onSuccessOverallGoal(goal) {
+      $('#OVERALL_GOAL').val(goal);
+    }
+
+    function onSuccessSessionGoal(goal) {
+      $('#SESSION_GOAL').val(goal);
+    }
+
+    function onSuccessPercentComplete(percent_complete) {
+      if (isNaN(percent_complete)) {
+         return;
+      }
+      var div = document.getElementById('percent-display');
+      if (percent_complete > 100) {
+         document.getElementById('progress').style.width = 100 + '%';
+         $('#progress').addClass('halo');
+
+      } else {
+         $('#progress').removeClass('halo');
+         document.getElementById('progress').style.width = percent_complete + '%';
+      }
+      div.innerHTML = percent_complete + '%';
+    }
+
+    function onSuccessSessionPercentComplete(percent_complete) {
+      if (isNaN(percent_complete)) {
+         return;
+      }
+      var div = document.getElementById('session-percent-display');
+      if (percent_complete > 100) {
+         div.innerHTML = 100 + '%';
+         $('#session-progress').addClass('halo');
+         document.getElementById('session-progress').style.width = 100 + '%';
+      } else {
+         $('#session-progress').removeClass('halo');
+         document.getElementById('session-progress').style.width = percent_complete + '%';
+      }
+      div.innerHTML = percent_complete + '%';
+    }
+
+    function recalculate() {
+      google.script.run.withSuccessHandler(onSuccessWordCount)
+        .getWordCount();
+
+      google.script.run.withSuccessHandler(onSuccessSessionWordCount)
+        .getWordCountSession();
+
+      google.script.run.withSuccessHandler(onSuccessPercentComplete)
+        .getOverallPercentComplete();
+
+      google.script.run.withSuccessHandler(onSuccessSessionPercentComplete)
+        .getSessionPercentComplete();
+    }
+
+    $(document).ready(function() {
+      recalculate();
+      google.script.run.withSuccessHandler(onSuccessOverallGoal)
+        .getProperty("OVERALL_GOAL");
+
+      google.script.run.withSuccessHandler(onSuccessSessionGoal)
+        .getProperty("SESSION_GOAL");
+
+      // Will execute myCallback every 1 second
+      var intervalID = window.setInterval(myCallback, 1000);
+
+      function myCallback() {
+       recalculate();
+      }
+
+      $('input').on('blur' , function() {
+        var thisId = $(this).attr('id');
+        var thisGoal = $(this).val();
+        var overallCount = parseInt($('#word-count-display').html());
+        var sessionCount = parseInt($('#session-word-count-display').html());
+
+        if (isNaN(thisGoal)) {
+         return;
+        }
+
+        switch (thisId) {
+         case 'OVERALL_GOAL':
+          if (thisGoal < overallCount) {
+           return;
+          }
+          google.script.run.withSuccessHandler(onSuccessPercentComplete)
+           .setProperty(thisId, thisGoal);
+           recalculate();
+          break;
+         case 'SESSION_GOAL':
+          if (thisGoal < sessionCount) {
+           return;
+          }
+          google.script.run.withSuccessHandler(onSuccessSessionPercentComplete)
+           .setProperty(thisId, thisGoal);
+           recalculate();
+          break;
+        }
+      });
+
+    });
+
+
+  </script>
+  <body>
+
+    <div class='box'>
+      <section>
+        <div id='count-tag' class='tag'>Overall Count</div>
+        <div id='word-count-display' class='content-right'></div>
+      </section>
+
+      <section>
+        <div class='tag'>Overall Goal</div>
+        <input id='OVERALL_GOAL' class='content-right'>
+      </section>
+
+      <section class='percent-section'>
+        <div class='content-right progress-bar' id='progress-bar'>
+          <div id='progress' class='progress'></div>
+        </div>
+        <div id='percent-display' class='percent-display'></div>
+      </section>
+    </div>
+
+    <div class='box'>
+      <section>
+        <div class='tag'>Session Count</div>
+        <div id='session-word-count-display' class='content-right'></div>
+      </section>
+
+      <section class='goal-section'>
+        <div  class='tag'>Session Goal</div>
+        <input id='SESSION_GOAL' class='content-right'>
+      </section>
+
+      <section class='percent-section'>
+        <div class='content-right progress-bar' id='session progress-bar'>
+          <div id='session-progress' class='progress'></div>
+        </div>
+        <div id='session-percent-display' class='percent-display'></div>
+      </section>
+    </div>
+
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+
+    <style>
+
+      .box {
+        border: 1px solid gray;
+        padding: 5%;
+      }
+      section {
+        margin: 1% 10%;
+        font-size: 25px;
+        padding: 5% 0;
+      }
+
+      input {
+        border: none;
+        border-bottom: 1px solid black;
+        height: 25px;
+        font-size: 24px;
+        width: 90px !important;
+        margin-left: 25px;
+      }
+
+      .tag {
+        display: inline-block;
+        font-size: 14px;
+      }
+
+      .content-right {
+        display: inline-block;
+        width: 50%;
+        text-align: right;
+        vertical-align: middle;
+      }
+
+      .progress-bar {
+        border: 1px solid #4c6b0e;
+        width: 68%;
+        height: 25px;
+      }
+
+      .progress {
+        background-color: #2b9a2b;
+        height: 100%;
+        width: 0px;
+      }
+
+      .percent-display {
+        width: 10%;
+        font-size: 17px;
+        position: relative;
+        top: -1px;
+        display: inline;
+      }
+
+      .percent-section {
+        margin: 1% 0;
+        border: none;
+      }
+
+      .halo {
+        box-shadow: 0px 0px 10px 10px #7bf321;
+      }
+    </style>
+  </body>
+</html>
