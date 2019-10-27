@@ -11,7 +11,7 @@ function onOpen() {
 
 function showSidebar() {
   const html = HtmlService.createHtmlOutputFromFile('sidebar')
-      .setTitle('Word Count Progress Bar')
+      .setTitle('Word Count Goal Tracker')
       .setWidth(300);
   DocumentApp.getUi()
       .showSidebar(html)
